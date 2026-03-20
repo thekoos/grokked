@@ -4,7 +4,8 @@ A Grok-powered AI coding assistant CLI — works like Claude Code but runs on [x
 
 ## Features
 
-- Streaming responses with a fixed input box pinned to the bottom of the terminal
+- Terminal based 
+- Streaming responses
 - Agentic tool loop — reads files, edits code, runs shell commands, searches the codebase
 - Per-operation approval prompts (bash commands, file writes, edits)
 - Session-wide auto-approve for edits
