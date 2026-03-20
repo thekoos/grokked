@@ -21,7 +21,7 @@ A Grok-powered AI coding assistant CLI — works like Claude Code but runs on [x
 ### From GitHub (recommended)
 
 ```bash
-npm install -g git+https://github.com/<your-username>/grokked
+npm install -g git+https://github.com/thekoos/grokked
 ```
 
 > TypeScript is compiled automatically during install via the `prepare` script.
@@ -29,7 +29,7 @@ npm install -g git+https://github.com/<your-username>/grokked
 ### From source
 
 ```bash
-git clone https://github.com/<your-username>/grokked
+git clone https://github.com/thekoos/grokked
 cd grokked
 npm install
 npm run build
