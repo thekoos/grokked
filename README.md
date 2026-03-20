@@ -2,9 +2,13 @@
 
 A Grok-powered AI coding assistant CLI — works like Claude Code but runs on [xAI Grok](https://x.ai).
 
+Use at your own risk, no guarantees, no expectations, have fun...
+
 ## Features
 
-- Terminal based 
+- 100% vibed with Claude code CLI in ~10 prompts and 0% code review
+- Tested on Powershell, may run on bash
+- Works fine for the development basics, stuborn as hell trying to get it to do other things
 - Streaming responses
 - Agentic tool loop — reads files, edits code, runs shell commands, searches the codebase
 - Per-operation approval prompts (bash commands, file writes, edits)
