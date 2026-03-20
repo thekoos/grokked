@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * @file terminal.ts
- * @version 0.1.1
+ * @version 0.1.2
  * @description Fixed-bottom terminal UI with raw mode input, ANSI scroll region output, and approval prompts.
  *              Input box wraps to multiple lines when text exceeds terminal width.
  */
@@ -236,17 +236,10 @@ class TerminalUI {
           process.stdin.setRawMode(false);
           process.stdin.pause();
         }
-        // Clear the entire input area so output can use those rows.
-        for (let r = this.currentTopBorderRow; r <= this.rows; r++) {
-          process.stdout.write(`\x1b[${r};1H\x1b[2K`);
-        }
-        // Reset scroll region to single-line default before output starts.
-        const resetScrollBottom = Math.max(2, this.rows - 3);
-        process.stdout.write(`\x1b[1;${resetScrollBottom}r`);
-        process.stdout.write(`\x1b[${resetScrollBottom};1H`);
-        this.currentScrollBottom = resetScrollBottom;
-        this.currentTopBorderRow = this.rows - 2;
-        this.currentInputLines = 1;
+        // Redraw the box empty so it stays visible during streaming.
+        this.drawBox('', 0);
+        // Move cursor into the output area; output will scroll above the box.
+        process.stdout.write(`\x1b[${this.currentScrollBottom};1H`);
         this.cursorInBox = false;
         resolve(result);
       };
