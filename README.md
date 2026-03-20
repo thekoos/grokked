@@ -41,6 +41,17 @@ npm run build
 npm link
 ```
 
+### Global install (local dev)
+
+If you've cloned the repo and want `grokked` available system-wide:
+
+```bash
+npm run build
+npm link
+```
+
+To uninstall: `npm unlink -g grokked`
+
 ## Configuration
 
 Copy `.env.example` to `.env` in the directory you want to use grokked from:
