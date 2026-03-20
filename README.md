@@ -48,10 +48,10 @@ Edit `.env`:
 
 ```env
 XAI_API_KEY=your-xai-api-key-here
-GROK_MODEL=grok-3
+GROK_MODEL=grok-4.20-0309-reasoning
 ```
 
-Available models: `grok-3`, `grok-3-mini`, `grok-2`
+Available models: `grok-4.20-0309-reasoning`, `grok-4.20-0309-non-reasoning`, `grok-4.20-multi-agent-0309`, `grok-4-1-fast-reasoning`, `grok-4-1-fast-non-reasoning`
 
 ### Custom system prompt
 
