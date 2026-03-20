@@ -121,11 +121,20 @@ Choosing `Yes to all` auto-approves all subsequent file edits for the rest of th
 ## Development
 
 ```bash
-npm run dev       # run with tsx watch (hot reload)
-npm test          # run test suite
-npm run test:watch # run tests in watch mode
-npm run build     # compile TypeScript to dist/
+npm run dev        # run with tsx watch (hot reload)
+npm run build      # compile TypeScript to dist/
 ```
+
+### Testing
+
+Grokked uses [Vitest](https://vitest.dev) for unit testing. Tests cover the core modules: config loading, response formatting, and all tools (bash, read, write, edit, glob, grep).
+
+```bash
+npm test           # run the full test suite once
+npm run test:watch # re-run tests automatically on file changes
+```
+
+Tests are also run automatically on every push and pull request via GitHub Actions (Node.js 18, 20, and 22).
 
 ## License
 
