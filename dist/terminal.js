@@ -2,7 +2,7 @@
 "use strict";
 /**
  * @file terminal.ts
- * @version 0.1.4
+ * @version 0.1.5
  * @description Fixed-bottom terminal UI with raw mode input, ANSI scroll region output, and approval prompts.
  *              Input box wraps to multiple lines when text exceeds terminal width.
  */
@@ -52,9 +52,16 @@ class TerminalUI {
     get rows() { return process.stdout.rows ?? 24; }
     get cols() { return process.stdout.columns ?? 80; }
     get bottomBorderRow() { return this.rows; }
-    // Named resize handler so it can be removed in cleanup().
+    // Debounce resize redraws — fires many times per second while dragging.
+    resizeTimer = null;
     onResize = () => {
-        this.drawBox(this.liveBuffer, this.liveCursor);
+        if (this.resizeTimer)
+            clearTimeout(this.resizeTimer);
+        this.resizeTimer = setTimeout(() => {
+            this.resizeTimer = null;
+            process.stdout.write('\x1b[2J'); // clear screen to remove border artifacts
+            this.drawBox(this.liveBuffer, this.liveCursor);
+        }, 150);
     };
     // ── Initialisation ──────────────────────────────────────────────────────────
     setWorkingDir(dir) {
