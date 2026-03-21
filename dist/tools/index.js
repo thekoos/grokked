@@ -1,7 +1,7 @@
 "use strict";
 /**
  * @file tools/index.ts
- * @version 0.1.1
+ * @version 0.1.2
  * @description OpenAI-format tool definitions and dispatcher for all available tools.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -127,6 +127,22 @@ exports.toolDefinitions = [
     {
         type: 'function',
         function: {
+            name: 'search_replace_all',
+            description: 'Replace every occurrence of old_string with new_string in a file. Use this instead of edit_file when the same text appears multiple times and all instances should be changed — e.g. renaming a variable or updating a repeated value.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    file_path: { type: 'string', description: 'Path to the file to edit.' },
+                    old_string: { type: 'string', description: 'The exact text to find and replace everywhere it appears.' },
+                    new_string: { type: 'string', description: 'The text to substitute for every occurrence of old_string.' },
+                },
+                required: ['file_path', 'old_string', 'new_string'],
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
             name: 'list_dir',
             description: 'List the contents of a directory. Shows directories (d) and files (f) with file sizes. Directories are listed first, then files, both sorted alphabetically.',
             parameters: {
@@ -180,6 +196,8 @@ async function executeTool(name, args, config) {
                 return (0, read_1.executeReadFile)(args, config);
             case 'write_file':
                 return await (0, write_1.executeWriteFile)(args, config);
+            case 'search_replace_all':
+                return await (0, edit_1.executeSearchReplaceAll)(args, config);
             case 'edit_file':
                 return await (0, edit_1.executeEditFile)(args, config);
             case 'list_dir':

@@ -1,7 +1,8 @@
 /**
  * @file tools/edit.ts
- * @version 0.1.1
+ * @version 0.1.2
  * @description Precise find-and-replace file editing tool; treats replacement as a literal string to avoid $ pattern corruption.
+ *              Also provides search_replace_all for replacing every occurrence of a string in a file.
  */
 
 import * as fs from 'fs';
@@ -42,6 +43,37 @@ export async function executeEditFile(
   const newContent = content.replace(args.old_string, () => args.new_string);
   fs.writeFileSync(filePath, newContent, 'utf-8');
   return `Edited: ${args.file_path}`;
+}
+
+export async function executeSearchReplaceAll(
+  args: { file_path: string; old_string: string; new_string: string },
+  config: Config,
+): Promise<string> {
+  const filePath = resolvePath(args.file_path, config.workingDir);
+
+  if (!fs.existsSync(filePath)) {
+    return `Error: File not found: ${args.file_path}`;
+  }
+
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const occurrences = countOccurrences(content, args.old_string);
+
+  if (occurrences === 0) {
+    return `Error: old_string not found in ${args.file_path}. Read the file first and copy the exact text including whitespace.`;
+  }
+
+  const startLine = content.slice(0, content.indexOf(args.old_string)).split('\n').length;
+  printEditDiff(args.file_path, args.old_string, args.new_string, startLine);
+
+  const approved = await approveEdit(
+    `Replace all ${occurrences} occurrence${occurrences > 1 ? 's' : ''} in ${args.file_path}`,
+  );
+  if (!approved) return `Edit denied: ${args.file_path}`;
+
+  // Split and rejoin to replace all occurrences literally, avoiding $ pattern issues.
+  const newContent = content.split(args.old_string).join(args.new_string);
+  fs.writeFileSync(filePath, newContent, 'utf-8');
+  return `Replaced ${occurrences} occurrence${occurrences > 1 ? 's' : ''} in ${args.file_path}`;
 }
 
 function countOccurrences(text: string, substring: string): number {

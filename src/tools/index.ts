@@ -1,6 +1,6 @@
 /**
  * @file tools/index.ts
- * @version 0.1.1
+ * @version 0.1.2
  * @description OpenAI-format tool definitions and dispatcher for all available tools.
  */
 
@@ -9,7 +9,7 @@ import { Config } from '../config';
 import { executeBash } from './bash';
 import { executeReadFile } from './read';
 import { executeWriteFile } from './write';
-import { executeEditFile } from './edit';
+import { executeEditFile, executeSearchReplaceAll } from './edit';
 import { executeGlob } from './glob';
 import { executeGrep } from './grep';
 import { executeListDir } from './list_dir';
@@ -134,6 +134,23 @@ export const toolDefinitions: OpenAI.Chat.ChatCompletionTool[] = [
   {
     type: 'function',
     function: {
+      name: 'search_replace_all',
+      description:
+        'Replace every occurrence of old_string with new_string in a file. Use this instead of edit_file when the same text appears multiple times and all instances should be changed — e.g. renaming a variable or updating a repeated value.',
+      parameters: {
+        type: 'object',
+        properties: {
+          file_path: { type: 'string', description: 'Path to the file to edit.' },
+          old_string: { type: 'string', description: 'The exact text to find and replace everywhere it appears.' },
+          new_string: { type: 'string', description: 'The text to substitute for every occurrence of old_string.' },
+        },
+        required: ['file_path', 'old_string', 'new_string'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'list_dir',
       description:
         'List the contents of a directory. Shows directories (d) and files (f) with file sizes. Directories are listed first, then files, both sorted alphabetically.',
@@ -199,6 +216,11 @@ export async function executeTool(
         );
       case 'write_file':
         return await executeWriteFile(args as { file_path: string; content: string }, config);
+      case 'search_replace_all':
+        return await executeSearchReplaceAll(
+          args as { file_path: string; old_string: string; new_string: string },
+          config,
+        );
       case 'edit_file':
         return await executeEditFile(
           args as { file_path: string; old_string: string; new_string: string },
