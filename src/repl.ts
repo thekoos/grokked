@@ -21,8 +21,12 @@ export async function startRepl(config: Config): Promise<void> {
   const commands: Record<string, () => void> = {
     '/help': () => printHelp(),
     '/clear': () => {
+      terminal.clearScreen();
+    },
+    '/reset': () => {
       history.splice(1);
       terminal.clearScreen();
+      terminal.write(chalk.dim('  Conversation history cleared.\n'));
     },
     '/exit': () => {
       terminal.cleanup();

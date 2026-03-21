@@ -20,8 +20,12 @@ async function startRepl(config) {
     const commands = {
         '/help': () => (0, ui_1.printHelp)(),
         '/clear': () => {
+            terminal_1.terminal.clearScreen();
+        },
+        '/reset': () => {
             history.splice(1);
             terminal_1.terminal.clearScreen();
+            terminal_1.terminal.write(chalk_1.default.dim('  Conversation history cleared.\n'));
         },
         '/exit': () => {
             terminal_1.terminal.cleanup();

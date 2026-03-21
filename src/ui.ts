@@ -18,7 +18,8 @@ export function printBanner(model: string): void {
 export function printHelp(): void {
   terminal.write(
     chalk.bold('\nCommands:\n') +
-      `  ${chalk.cyan('/clear')}   Clear conversation history\n` +
+      `  ${chalk.cyan('/clear')}   Clear the screen\n` +
+      `  ${chalk.cyan('/reset')}   Clear the screen and conversation history\n` +
       `  ${chalk.cyan('/exit')}    Exit grokked\n` +
       `  ${chalk.cyan('/help')}    Show this help\n` +
       `  ${chalk.cyan('/model')}   Show current model\n`,

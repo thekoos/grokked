@@ -23,7 +23,8 @@ function printBanner(model) {
 }
 function printHelp() {
     terminal_1.terminal.write(chalk_1.default.bold('\nCommands:\n') +
-        `  ${chalk_1.default.cyan('/clear')}   Clear conversation history\n` +
+        `  ${chalk_1.default.cyan('/clear')}   Clear the screen\n` +
+        `  ${chalk_1.default.cyan('/reset')}   Clear the screen and conversation history\n` +
         `  ${chalk_1.default.cyan('/exit')}    Exit grokked\n` +
         `  ${chalk_1.default.cyan('/help')}    Show this help\n` +
         `  ${chalk_1.default.cyan('/model')}   Show current model\n`);
