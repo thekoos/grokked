@@ -1,6 +1,6 @@
 /**
  * @file repl.ts
- * @version 0.1.0
+ * @version 0.1.1
  * @description Main REPL loop and agentic tool-execution loop with conversation history management.
  */
 
@@ -22,7 +22,7 @@ export async function startRepl(config: Config): Promise<void> {
     '/help': () => printHelp(),
     '/clear': () => {
       history.splice(1);
-      terminal.write(chalk.dim('  History cleared.\n'));
+      terminal.clearScreen();
     },
     '/exit': () => {
       terminal.cleanup();

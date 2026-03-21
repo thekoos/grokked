@@ -1,7 +1,7 @@
 "use strict";
 /**
  * @file repl.ts
- * @version 0.1.0
+ * @version 0.1.1
  * @description Main REPL loop and agentic tool-execution loop with conversation history management.
  */
 var __importDefault = (this && this.__importDefault) || function (mod) {
@@ -21,7 +21,7 @@ async function startRepl(config) {
         '/help': () => (0, ui_1.printHelp)(),
         '/clear': () => {
             history.splice(1);
-            terminal_1.terminal.write(chalk_1.default.dim('  History cleared.\n'));
+            terminal_1.terminal.clearScreen();
         },
         '/exit': () => {
             terminal_1.terminal.cleanup();

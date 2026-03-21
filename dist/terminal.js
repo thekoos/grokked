@@ -2,7 +2,7 @@
 "use strict";
 /**
  * @file terminal.ts
- * @version 0.1.5
+ * @version 0.1.6
  * @description Fixed-bottom terminal UI with raw mode input, ANSI scroll region output, and approval prompts.
  *              Input box wraps to multiple lines when text exceeds terminal width.
  */
@@ -168,6 +168,10 @@ class TerminalUI {
             process.stdout.write(`\x1b[${this.currentScrollBottom};1H`);
             this.cursorInBox = false;
         }
+    }
+    clearScreen() {
+        process.stdout.write('\x1b[2J\x1b[H');
+        this.drawBox('', 0);
     }
     write(text) {
         this.enterOutputMode();
