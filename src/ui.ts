@@ -1,6 +1,6 @@
 /**
  * @file ui.ts
- * @version 0.1.0
+ * @version 0.1.1
  * @description Terminal output helpers for banners, help text, tool display, and error messages.
  */
 
@@ -32,6 +32,34 @@ export function printError(msg: string): void {
 export function printToolStart(name: string, args: Record<string, unknown>): void {
   const preview = formatArgs(args);
   terminal.write('\n' + chalk.yellow('◆ ') + chalk.bold(name) + chalk.dim(`(${preview})\n`));
+}
+
+export function printEditDiff(
+  filePath: string,
+  oldString: string,
+  newString: string,
+  startLine: number,
+): void {
+  const oldLines = oldString.split('\n');
+  const newLines = newString.split('\n');
+  const maxLineNo = startLine + Math.max(oldLines.length, newLines.length);
+  const lineNoWidth = String(maxLineNo).length;
+
+  terminal.write(chalk.bold.dim(`\n  ${filePath}\n`));
+
+  let lineNo = startLine;
+  for (const line of oldLines) {
+    const num = String(lineNo).padStart(lineNoWidth);
+    terminal.write(chalk.red(`  ${num} - ${line}\n`));
+    lineNo++;
+  }
+
+  lineNo = startLine;
+  for (const line of newLines) {
+    const num = String(lineNo).padStart(lineNoWidth);
+    terminal.write(chalk.green(`  ${num} + ${line}\n`));
+    lineNo++;
+  }
 }
 
 export function printToolResult(result: string): void {

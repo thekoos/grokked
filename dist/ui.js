@@ -1,7 +1,7 @@
 "use strict";
 /**
  * @file ui.ts
- * @version 0.1.0
+ * @version 0.1.1
  * @description Terminal output helpers for banners, help text, tool display, and error messages.
  */
 var __importDefault = (this && this.__importDefault) || function (mod) {
@@ -12,6 +12,7 @@ exports.printBanner = printBanner;
 exports.printHelp = printHelp;
 exports.printError = printError;
 exports.printToolStart = printToolStart;
+exports.printEditDiff = printEditDiff;
 exports.printToolResult = printToolResult;
 const chalk_1 = __importDefault(require("chalk"));
 const terminal_1 = require("./terminal");
@@ -33,6 +34,25 @@ function printError(msg) {
 function printToolStart(name, args) {
     const preview = formatArgs(args);
     terminal_1.terminal.write('\n' + chalk_1.default.yellow('◆ ') + chalk_1.default.bold(name) + chalk_1.default.dim(`(${preview})\n`));
+}
+function printEditDiff(filePath, oldString, newString, startLine) {
+    const oldLines = oldString.split('\n');
+    const newLines = newString.split('\n');
+    const maxLineNo = startLine + Math.max(oldLines.length, newLines.length);
+    const lineNoWidth = String(maxLineNo).length;
+    terminal_1.terminal.write(chalk_1.default.bold.dim(`\n  ${filePath}\n`));
+    let lineNo = startLine;
+    for (const line of oldLines) {
+        const num = String(lineNo).padStart(lineNoWidth);
+        terminal_1.terminal.write(chalk_1.default.red(`  ${num} - ${line}\n`));
+        lineNo++;
+    }
+    lineNo = startLine;
+    for (const line of newLines) {
+        const num = String(lineNo).padStart(lineNoWidth);
+        terminal_1.terminal.write(chalk_1.default.green(`  ${num} + ${line}\n`));
+        lineNo++;
+    }
 }
 function printToolResult(result) {
     const trimmed = result.length > 400 ? result.substring(0, 400) + '...' : result;

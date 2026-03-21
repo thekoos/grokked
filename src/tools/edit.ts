@@ -1,12 +1,13 @@
 /**
  * @file tools/edit.ts
- * @version 0.1.0
+ * @version 0.1.1
  * @description Precise find-and-replace file editing tool; treats replacement as a literal string to avoid $ pattern corruption.
  */
 
 import * as fs from 'fs';
 import { Config } from '../config';
 import { approveEdit } from '../approval';
+import { printEditDiff } from '../ui';
 import { resolvePath } from './utils';
 
 export async function executeEditFile(
@@ -29,6 +30,9 @@ export async function executeEditFile(
   if (occurrences > 1) {
     return `Error: old_string appears ${occurrences} times in ${args.file_path}. Add more surrounding context to make it unique.`;
   }
+
+  const startLine = content.slice(0, content.indexOf(args.old_string)).split('\n').length;
+  printEditDiff(args.file_path, args.old_string, args.new_string, startLine);
 
   const approved = await approveEdit(`Edit ${args.file_path}`);
   if (!approved) return `Edit denied: ${args.file_path}`;
