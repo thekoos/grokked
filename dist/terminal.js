@@ -2,7 +2,7 @@
 "use strict";
 /**
  * @file terminal.ts
- * @version 0.1.6
+ * @version 0.1.7
  * @description Fixed-bottom terminal UI with raw mode input, ANSI scroll region output, and approval prompts.
  *              Input box wraps to multiple lines when text exceeds terminal width.
  */
@@ -36,6 +36,7 @@ class TerminalUI {
     workingDir = '';
     spinnerTimer = null;
     spinnerIndex = 0;
+    spinnerText = '';
     spinnerFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
     // Track the current input area geometry so enterOutputMode and done() know
     // which rows to target and clear.
@@ -177,15 +178,25 @@ class TerminalUI {
         this.enterOutputMode();
         process.stdout.write(text);
     }
-    startSpinner(label = 'thinking') {
+    startSpinner() {
         this.enterOutputMode();
         this.spinnerIndex = 0;
+        this.spinnerText = '';
         process.stdout.write('\n');
         this.spinnerTimer = setInterval(() => {
             const frame = this.spinnerFrames[this.spinnerIndex % this.spinnerFrames.length] ?? '⠋';
-            process.stdout.write(`\r  ${chalk_1.default.dim(frame + ' ' + label)}`);
+            // Reserve: 2 indent + 1 frame + 1 space = 4 chars; show tail of reasoning text
+            const available = this.cols - 4;
+            const display = this.spinnerText.length > available
+                ? this.spinnerText.slice(-available)
+                : (this.spinnerText || 'thinking');
+            process.stdout.write(`\r  ${chalk_1.default.dim(frame + ' ' + display)}`);
             this.spinnerIndex++;
         }, 80);
+    }
+    updateSpinnerText(text) {
+        // Collapse newlines so reasoning stays on one line.
+        this.spinnerText = text.replace(/\s*\n\s*/g, ' ').trimStart();
     }
     stopSpinner() {
         if (this.spinnerTimer) {

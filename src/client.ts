@@ -1,6 +1,6 @@
 /**
  * @file client.ts
- * @version 0.1.1
+ * @version 0.1.2
  * @description Grok API client wrapping the OpenAI-compatible SDK with streaming and tool-call accumulation.
  */
 
@@ -39,6 +39,7 @@ export class GrokClient {
     });
 
     let text = '';
+    let reasoning = '';
     const toolCallsAccumulator = new Map<number, { id: string; name: string; arguments: string }>();
     let hasOutputText = false;
     const fmt = new ResponseFormatter();
@@ -48,6 +49,13 @@ export class GrokClient {
     for await (const chunk of stream) {
       const delta = chunk.choices[0]?.delta;
       if (!delta) continue;
+
+      // Reasoning models stream thinking tokens in reasoning_content.
+      const reasoningChunk = (delta as any).reasoning_content as string | undefined;
+      if (reasoningChunk) {
+        reasoning += reasoningChunk;
+        terminal.updateSpinnerText(reasoning);
+      }
 
       if (delta.content) {
         if (!hasOutputText) {
