@@ -2,7 +2,7 @@
 "use strict";
 /**
  * @file terminal.ts
- * @version 0.1.2
+ * @version 0.1.3
  * @description Fixed-bottom terminal UI with raw mode input, ANSI scroll region output, and approval prompts.
  *              Input box wraps to multiple lines when text exceeds terminal width.
  */
@@ -33,6 +33,9 @@ class TerminalUI {
     liveBuffer = '';
     liveCursor = 0;
     cursorInBox = false;
+    spinnerTimer = null;
+    spinnerIndex = 0;
+    spinnerFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
     // Track the current input area geometry so enterOutputMode and done() know
     // which rows to target and clear.
     currentScrollBottom;
@@ -146,6 +149,23 @@ class TerminalUI {
     write(text) {
         this.enterOutputMode();
         process.stdout.write(text);
+    }
+    startSpinner(label = 'thinking') {
+        this.enterOutputMode();
+        this.spinnerIndex = 0;
+        process.stdout.write('\n');
+        this.spinnerTimer = setInterval(() => {
+            const frame = this.spinnerFrames[this.spinnerIndex % this.spinnerFrames.length] ?? '⠋';
+            process.stdout.write(`\r  ${chalk_1.default.dim(frame + ' ' + label)}`);
+            this.spinnerIndex++;
+        }, 80);
+    }
+    stopSpinner() {
+        if (this.spinnerTimer) {
+            clearInterval(this.spinnerTimer);
+            this.spinnerTimer = null;
+            process.stdout.write('\r\x1b[2K'); // clear spinner line
+        }
     }
     // ── Interactive input ───────────────────────────────────────────────────────
     readLine() {

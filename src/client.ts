@@ -1,6 +1,6 @@
 /**
  * @file client.ts
- * @version 0.1.0
+ * @version 0.1.1
  * @description Grok API client wrapping the OpenAI-compatible SDK with streaming and tool-call accumulation.
  */
 
@@ -43,13 +43,15 @@ export class GrokClient {
     let hasOutputText = false;
     const fmt = new ResponseFormatter();
 
+    terminal.startSpinner();
+
     for await (const chunk of stream) {
       const delta = chunk.choices[0]?.delta;
       if (!delta) continue;
 
       if (delta.content) {
         if (!hasOutputText) {
-          terminal.write('\n');
+          terminal.stopSpinner();
           hasOutputText = true;
         }
         terminal.write(fmt.push(delta.content));
@@ -69,6 +71,7 @@ export class GrokClient {
       }
     }
 
+    terminal.stopSpinner();
     if (hasOutputText) terminal.write(fmt.flush() + '\n');
 
     const toolCalls: OpenAI.Chat.ChatCompletionMessageToolCall[] = Array.from(
