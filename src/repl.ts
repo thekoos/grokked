@@ -1,6 +1,6 @@
 /**
  * @file repl.ts
- * @version 0.1.1
+ * @version 0.1.2
  * @description Main REPL loop and agentic tool-execution loop with conversation history management.
  */
 
@@ -11,12 +11,27 @@ import { GrokClient } from './client';
 import { toolDefinitions, executeTool } from './tools/index';
 import { printHelp, printError, printToolStart, printToolResult } from './ui';
 import { terminal } from './terminal';
+import { saveContext, clearContext } from './context';
 
 type Message = OpenAI.Chat.ChatCompletionMessageParam;
 
 export async function startRepl(config: Config): Promise<void> {
   const client = new GrokClient(config);
   const history: Message[] = [{ role: 'system', content: config.systemPrompt }];
+
+  const shutdown = (clearHistory = false) => {
+    terminal.cleanup();
+    process.stdout.write('  Saving session context...\n');
+    const historyToSave = clearHistory ? [history[0]!] : history;
+    saveContext(client, historyToSave, config.workingDir)
+      .catch(() => {})
+      .finally(() => {
+        process.stdout.write('Goodbye!\n');
+        process.exit(0);
+      });
+  };
+
+  process.on('SIGINT', () => shutdown());
 
   const commands: Record<string, () => void> = {
     '/help': () => printHelp(),
@@ -25,14 +40,11 @@ export async function startRepl(config: Config): Promise<void> {
     },
     '/reset': () => {
       history.splice(1);
+      clearContext(config.workingDir);
       terminal.clearScreen();
-      terminal.write(chalk.dim('  Conversation history cleared.\n'));
+      terminal.write(chalk.dim('  Conversation history and context cleared.\n'));
     },
-    '/exit': () => {
-      terminal.cleanup();
-      process.stdout.write('Goodbye!\n');
-      process.exit(0);
-    },
+    '/exit': () => shutdown(),
     '/model': () => terminal.write(chalk.dim(`  Model: ${config.model}\n`)),
   };
 

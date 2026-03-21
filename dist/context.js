@@ -1,5 +1,10 @@
-#!/usr/bin/env node
 "use strict";
+/**
+ * @file context.ts
+ * @version 0.1.0
+ * @description Session context persistence — saves an AI-generated summary on exit and loads it on startup.
+ *              Context is stored in .grokked/context.md in the working directory.
+ */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -34,50 +39,35 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-/**
- * @file index.ts
- * @version 0.1.2
- * @description CLI entry point; loads .env, initialises the terminal UI, and starts the REPL.
- */
-const dotenv_1 = require("dotenv");
-const path = __importStar(require("path"));
+exports.contextPath = contextPath;
+exports.loadContext = loadContext;
+exports.clearContext = clearContext;
+exports.saveContext = saveContext;
 const fs = __importStar(require("fs"));
-const config_1 = require("./config");
-const terminal_1 = require("./terminal");
-const ui_1 = require("./ui");
-const repl_1 = require("./repl");
-function findAndLoadDotenv() {
-    const locations = [
-        path.join(process.cwd(), '.env'),
-        path.join(__dirname, '..', '.env'),
-    ];
-    for (const loc of locations) {
-        if (fs.existsSync(loc)) {
-            (0, dotenv_1.config)({ path: loc });
-            return;
-        }
-    }
-    (0, dotenv_1.config)();
+const path = __importStar(require("path"));
+const CONTEXT_DIR = '.grokked';
+const CONTEXT_FILE = 'context.md';
+function contextPath(workingDir) {
+    return path.join(workingDir, CONTEXT_DIR, CONTEXT_FILE);
 }
-async function main() {
-    findAndLoadDotenv();
-    let config;
-    try {
-        config = (0, config_1.loadConfig)();
-    }
-    catch (err) {
-        // Not yet in TUI mode — plain stderr is fine here
-        process.stderr.write(`Error: ${err.message}\n`);
-        process.stderr.write('  Copy .env.example to .env and add your XAI_API_KEY.\n');
-        process.exit(1);
-    }
-    terminal_1.terminal.init();
-    terminal_1.terminal.setWorkingDir(config.workingDir);
-    (0, ui_1.printBanner)(config.model);
-    await (0, repl_1.startRepl)(config);
+function loadContext(workingDir) {
+    const p = contextPath(workingDir);
+    return fs.existsSync(p) ? fs.readFileSync(p, 'utf-8') : null;
 }
-main().catch((err) => {
-    process.stderr.write(`Fatal error: ${err}\n`);
-    process.exit(1);
-});
-//# sourceMappingURL=index.js.map
+function clearContext(workingDir) {
+    const p = contextPath(workingDir);
+    if (fs.existsSync(p))
+        fs.unlinkSync(p);
+}
+async function saveContext(client, history, workingDir) {
+    if (history.length <= 1)
+        return; // nothing beyond the system message
+    const summary = await client.summarize(history);
+    if (!summary)
+        return;
+    const p = contextPath(workingDir);
+    fs.mkdirSync(path.dirname(p), { recursive: true });
+    const date = new Date().toISOString().split('T')[0];
+    fs.writeFileSync(p, `# Session Context — ${date}\n\n${summary}\n`, 'utf-8');
+}
+//# sourceMappingURL=context.js.map

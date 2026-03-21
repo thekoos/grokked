@@ -1,7 +1,7 @@
 "use strict";
 /**
  * @file repl.ts
- * @version 0.1.1
+ * @version 0.1.2
  * @description Main REPL loop and agentic tool-execution loop with conversation history management.
  */
 var __importDefault = (this && this.__importDefault) || function (mod) {
@@ -14,9 +14,22 @@ const client_1 = require("./client");
 const index_1 = require("./tools/index");
 const ui_1 = require("./ui");
 const terminal_1 = require("./terminal");
+const context_1 = require("./context");
 async function startRepl(config) {
     const client = new client_1.GrokClient(config);
     const history = [{ role: 'system', content: config.systemPrompt }];
+    const shutdown = (clearHistory = false) => {
+        terminal_1.terminal.cleanup();
+        process.stdout.write('  Saving session context...\n');
+        const historyToSave = clearHistory ? [history[0]] : history;
+        (0, context_1.saveContext)(client, historyToSave, config.workingDir)
+            .catch(() => { })
+            .finally(() => {
+            process.stdout.write('Goodbye!\n');
+            process.exit(0);
+        });
+    };
+    process.on('SIGINT', () => shutdown());
     const commands = {
         '/help': () => (0, ui_1.printHelp)(),
         '/clear': () => {
@@ -24,14 +37,11 @@ async function startRepl(config) {
         },
         '/reset': () => {
             history.splice(1);
+            (0, context_1.clearContext)(config.workingDir);
             terminal_1.terminal.clearScreen();
-            terminal_1.terminal.write(chalk_1.default.dim('  Conversation history cleared.\n'));
+            terminal_1.terminal.write(chalk_1.default.dim('  Conversation history and context cleared.\n'));
         },
-        '/exit': () => {
-            terminal_1.terminal.cleanup();
-            process.stdout.write('Goodbye!\n');
-            process.exit(0);
-        },
+        '/exit': () => shutdown(),
         '/model': () => terminal_1.terminal.write(chalk_1.default.dim(`  Model: ${config.model}\n`)),
     };
     while (true) {

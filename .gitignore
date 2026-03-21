@@ -2,6 +2,9 @@
 node_modules/
 
 
+# Session context (project-local, not committed)
+.grokked/
+
 # Environment files — never commit secrets
 .env
 .env.local

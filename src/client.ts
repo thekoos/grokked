@@ -1,6 +1,6 @@
 /**
  * @file client.ts
- * @version 0.1.2
+ * @version 0.1.3
  * @description Grok API client wrapping the OpenAI-compatible SDK with streaming and tool-call accumulation.
  */
 
@@ -93,5 +93,21 @@ export class GrokClient {
       }));
 
     return { text, toolCalls };
+  }
+
+  async summarize(history: OpenAI.Chat.ChatCompletionMessageParam[]): Promise<string> {
+    const response = await this.openai.chat.completions.create({
+      model: this.config.model,
+      messages: [
+        ...history,
+        {
+          role: 'user',
+          content:
+            'Summarize this coding session concisely for use as future context. Include: what was worked on, key decisions or changes made, current state of the code, and any pending tasks. Use brief markdown sections. Be concise — this will be prepended to future sessions.',
+        },
+      ],
+      stream: false,
+    });
+    return response.choices[0]?.message?.content ?? '';
   }
 }

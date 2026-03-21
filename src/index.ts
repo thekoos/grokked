@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * @file index.ts
- * @version 0.1.1
+ * @version 0.1.2
  * @description CLI entry point; loads .env, initialises the terminal UI, and starts the REPL.
  */
 import { config as loadDotenv } from 'dotenv';
@@ -42,12 +42,6 @@ async function main(): Promise<void> {
   terminal.init();
   terminal.setWorkingDir(config.workingDir);
   printBanner(config.model);
-
-  process.on('SIGINT', () => {
-    terminal.cleanup();
-    process.stdout.write('Goodbye!\n');
-    process.exit(0);
-  });
 
   await startRepl(config);
 }

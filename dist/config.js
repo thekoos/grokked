@@ -1,7 +1,7 @@
 "use strict";
 /**
  * @file config.ts
- * @version 0.1.0
+ * @version 0.1.1
  * @description Loads and validates configuration from environment variables and optional GROKKED.md.
  */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
@@ -59,7 +59,11 @@ function buildSystemPrompt(cwd) {
     const customInstructions = fs.existsSync(grokkedMdPath)
         ? fs.readFileSync(grokkedMdPath, 'utf-8') + '\n\n'
         : '';
-    return `${customInstructions}You are Grokked, a powerful AI coding assistant CLI powered by Grok.
+    const contextPath = path.join(cwd, '.grokked', 'context.md');
+    const sessionContext = fs.existsSync(contextPath)
+        ? `## Previous session context\n\n${fs.readFileSync(contextPath, 'utf-8')}\n\n`
+        : '';
+    return `${customInstructions}${sessionContext}You are Grokked, a powerful AI coding assistant CLI powered by Grok.
 You help users with software engineering tasks directly in their terminal.
 
 Working directory: ${cwd}
