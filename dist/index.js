@@ -36,7 +36,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
  * @file index.ts
- * @version 0.1.0
+ * @version 0.1.1
  * @description CLI entry point; loads .env, initialises the terminal UI, and starts the REPL.
  */
 const dotenv_1 = require("dotenv");
@@ -72,6 +72,7 @@ async function main() {
         process.exit(1);
     }
     terminal_1.terminal.init();
+    terminal_1.terminal.setWorkingDir(config.workingDir);
     (0, ui_1.printBanner)(config.model);
     process.on('SIGINT', () => {
         terminal_1.terminal.cleanup();

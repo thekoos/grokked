@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * @file terminal.ts
- * @version 0.1.3
+ * @version 0.1.4
  * @description Fixed-bottom terminal UI with raw mode input, ANSI scroll region output, and approval prompts.
  *              Input box wraps to multiple lines when text exceeds terminal width.
  */
@@ -33,6 +33,8 @@ class TerminalUI {
   private liveCursor = 0;
   private cursorInBox = false;
 
+  private workingDir = '';
+
   private spinnerTimer: NodeJS.Timeout | null = null;
   private spinnerIndex = 0;
   private readonly spinnerFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
@@ -62,6 +64,10 @@ class TerminalUI {
   };
 
   // ── Initialisation ──────────────────────────────────────────────────────────
+
+  setWorkingDir(dir: string): void {
+    this.workingDir = dir;
+  }
 
   init(): void {
     process.stdout.write('\x1b[2J\x1b[H');
@@ -96,6 +102,19 @@ class TerminalUI {
    *   - Top border floats up; scroll region shrinks to match.
    *   - Cursor is positioned at the correct row + column within the wrap.
    */
+  private drawBottomBorder(): string {
+    const cols = this.cols;
+    const label = this.workingDir ? ` Folder: ${this.workingDir} ` : '';
+    const maxLabelLen = cols - 4; // leave room for at least ── on each side
+    const truncated = label.length > maxLabelLen
+      ? ` Folder: ...${this.workingDir.slice(-(maxLabelLen - 12))} `
+      : label;
+    const remaining = cols - truncated.length;
+    const left = '──';
+    const right = '─'.repeat(Math.max(0, remaining - left.length));
+    return chalk.dim(left) + chalk.dim.cyan(truncated) + chalk.dim(right);
+  }
+
   private drawBox(input: string, cursorPos: number): void {
     const cols = this.cols;
     const rows = this.rows;
@@ -141,7 +160,7 @@ class TerminalUI {
     }
 
     // Draw bottom border (always fixed to last row).
-    process.stdout.write(`\x1b[${this.bottomBorderRow};1H${hr}`);
+    process.stdout.write(`\x1b[${this.bottomBorderRow};1H${this.drawBottomBorder()}`);
 
     // Position cursor within the wrapped input.
     const combinedCursorPos = PROMPT_WIDTH + cursorPos;
@@ -280,7 +299,7 @@ class TerminalUI {
     const hr = chalk.dim('─'.repeat(this.cols));
     process.stdout.write(`\x1b[${singleTopBorder};1H\x1b[2K${hr}`);
     process.stdout.write(`\x1b[${this.rows - 1};1H\x1b[2K${chalk.yellow('? ')}Press ${choices.map((_, i) => i + 1).join('/')} `);
-    process.stdout.write(`\x1b[${this.bottomBorderRow};1H\x1b[2K${hr}`);
+    process.stdout.write(`\x1b[${this.bottomBorderRow};1H\x1b[2K${this.drawBottomBorder()}`);
     this.currentTopBorderRow = singleTopBorder;
     this.cursorInBox = true;
 
