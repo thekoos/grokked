@@ -108,6 +108,7 @@ Grokked has access to the following tools. Each tool call is shown inline above 
 | `read_file`  | Read a file with optional line offset and limit                    |
 | `write_file` | Create or overwrite a file (requires approval)                     |
 | `edit_file`  | Precise find-and-replace within a file (requires approval)         |
+| `list_dir`   | List directory contents with type indicators and file sizes        |
 | `glob`       | Find files by pattern (e.g. `**/*.ts`)                             |
 | `grep`       | Search file contents with a regex                                  |
 

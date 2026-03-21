@@ -1,7 +1,7 @@
 "use strict";
 /**
  * @file tools/index.ts
- * @version 0.1.0
+ * @version 0.1.1
  * @description OpenAI-format tool definitions and dispatcher for all available tools.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -13,6 +13,7 @@ const write_1 = require("./write");
 const edit_1 = require("./edit");
 const glob_1 = require("./glob");
 const grep_1 = require("./grep");
+const list_dir_1 = require("./list_dir");
 exports.toolDefinitions = [
     {
         type: 'function',
@@ -126,6 +127,23 @@ exports.toolDefinitions = [
     {
         type: 'function',
         function: {
+            name: 'list_dir',
+            description: 'List the contents of a directory. Shows directories (d) and files (f) with file sizes. Directories are listed first, then files, both sorted alphabetically.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    path: {
+                        type: 'string',
+                        description: 'Directory path to list, relative to working directory. Defaults to working directory.',
+                    },
+                },
+                required: [],
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
             name: 'grep',
             description: 'Search file contents using a regex pattern. Returns matching lines with file paths and line numbers.',
             parameters: {
@@ -164,6 +182,8 @@ async function executeTool(name, args, config) {
                 return await (0, write_1.executeWriteFile)(args, config);
             case 'edit_file':
                 return await (0, edit_1.executeEditFile)(args, config);
+            case 'list_dir':
+                return (0, list_dir_1.executeListDir)(args, config);
             case 'glob':
                 return await (0, glob_1.executeGlob)(args, config);
             case 'grep':

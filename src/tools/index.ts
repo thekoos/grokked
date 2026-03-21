@@ -1,6 +1,6 @@
 /**
  * @file tools/index.ts
- * @version 0.1.0
+ * @version 0.1.1
  * @description OpenAI-format tool definitions and dispatcher for all available tools.
  */
 
@@ -12,6 +12,7 @@ import { executeWriteFile } from './write';
 import { executeEditFile } from './edit';
 import { executeGlob } from './glob';
 import { executeGrep } from './grep';
+import { executeListDir } from './list_dir';
 
 export const toolDefinitions: OpenAI.Chat.ChatCompletionTool[] = [
   {
@@ -133,6 +134,25 @@ export const toolDefinitions: OpenAI.Chat.ChatCompletionTool[] = [
   {
     type: 'function',
     function: {
+      name: 'list_dir',
+      description:
+        'List the contents of a directory. Shows directories (d) and files (f) with file sizes. Directories are listed first, then files, both sorted alphabetically.',
+      parameters: {
+        type: 'object',
+        properties: {
+          path: {
+            type: 'string',
+            description:
+              'Directory path to list, relative to working directory. Defaults to working directory.',
+          },
+        },
+        required: [],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'grep',
       description:
         'Search file contents using a regex pattern. Returns matching lines with file paths and line numbers.',
@@ -184,6 +204,8 @@ export async function executeTool(
           args as { file_path: string; old_string: string; new_string: string },
           config,
         );
+      case 'list_dir':
+        return executeListDir(args as { path?: string }, config);
       case 'glob':
         return await executeGlob(args as { pattern: string; path?: string }, config);
       case 'grep':
