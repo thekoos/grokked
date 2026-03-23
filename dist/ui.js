@@ -1,7 +1,7 @@
 "use strict";
 /**
  * @file ui.ts
- * @version 0.1.1
+ * @version 0.1.2
  * @description Terminal output helpers for banners, help text, tool display, and error messages.
  */
 var __importDefault = (this && this.__importDefault) || function (mod) {
@@ -27,7 +27,10 @@ function printHelp() {
         `  ${chalk_1.default.cyan('/reset')}   Clear the screen and conversation history\n` +
         `  ${chalk_1.default.cyan('/exit')}    Exit grokked\n` +
         `  ${chalk_1.default.cyan('/help')}    Show this help\n` +
-        `  ${chalk_1.default.cyan('/model')}   Show current model\n`);
+        `  ${chalk_1.default.cyan('/model')}   Show current model\n` +
+        chalk_1.default.bold('\nScreenshot:\n') +
+        `  Include ${chalk_1.default.cyan('/screen')} anywhere in your message to attach a region screenshot.\n` +
+        `  Example: ${chalk_1.default.dim('What is this error? /screen')}\n`);
 }
 function printError(msg) {
     terminal_1.terminal.write(chalk_1.default.red('\nError: ') + msg + '\n');

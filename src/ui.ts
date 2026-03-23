@@ -1,6 +1,6 @@
 /**
  * @file ui.ts
- * @version 0.1.1
+ * @version 0.1.2
  * @description Terminal output helpers for banners, help text, tool display, and error messages.
  */
 
@@ -22,7 +22,10 @@ export function printHelp(): void {
       `  ${chalk.cyan('/reset')}   Clear the screen and conversation history\n` +
       `  ${chalk.cyan('/exit')}    Exit grokked\n` +
       `  ${chalk.cyan('/help')}    Show this help\n` +
-      `  ${chalk.cyan('/model')}   Show current model\n`,
+      `  ${chalk.cyan('/model')}   Show current model\n` +
+      chalk.bold('\nScreenshot:\n') +
+      `  Include ${chalk.cyan('/screen')} anywhere in your message to attach a region screenshot.\n` +
+      `  Example: ${chalk.dim('What is this error? /screen')}\n`,
   );
 }
 

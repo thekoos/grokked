@@ -1,6 +1,6 @@
 /**
  * @file repl.ts
- * @version 0.1.2
+ * @version 0.1.3
  * @description Main REPL loop and agentic tool-execution loop with conversation history management.
  */
 
@@ -12,6 +12,7 @@ import { toolDefinitions, executeTool } from './tools/index';
 import { printHelp, printError, printToolStart, printToolResult } from './ui';
 import { terminal } from './terminal';
 import { saveContext, clearContext } from './context';
+import { captureRegion } from './tools/screenshot';
 
 type Message = OpenAI.Chat.ChatCompletionMessageParam;
 
@@ -60,16 +61,49 @@ export async function startRepl(config: Config): Promise<void> {
       continue;
     }
 
-    history.push({ role: 'user', content: input });
+    // If the input contains /screen, capture a region screenshot and attach it.
+    if (input.includes('/screen')) {
+      const text = input.replace('/screen', '').trim() || 'Analyze this screenshot.';
+      terminal.write(chalk.dim('  Select a region on screen (drag to select, Esc to cancel)...\n'));
+      const base64 = await captureRegion();
+      if (!base64) {
+        terminal.write(chalk.yellow('  Screenshot cancelled.\n'));
+        continue;
+      }
+      terminal.write(chalk.dim('  Screenshot captured.\n'));
+      history.push({
+        role: 'user',
+        content: [
+          { type: 'text', text },
+          { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } },
+        ],
+      });
+    } else {
+      history.push({ role: 'user', content: input });
+    }
+
     // Snapshot length after user message — restore here on failure so any
     // partial assistant/tool messages added during the loop are rolled back.
     const historySnapshot = history.length;
 
     try {
       await runAgentLoop(client, history, config);
+      // Strip images from history after response to avoid token bloat on future turns.
+      stripImagesFromHistory(history);
     } catch (err: any) {
       printError(err.message);
       history.splice(historySnapshot);
+    }
+  }
+}
+
+function stripImagesFromHistory(history: Message[]): void {
+  for (const msg of history) {
+    if (Array.isArray(msg.content)) {
+      const textParts = msg.content.filter((p) => p.type === 'text');
+      if (textParts.length > 0) {
+        msg.content = textParts.map((p) => (p as { type: 'text'; text: string }).text).join(' ');
+      }
     }
   }
 }

@@ -1,7 +1,7 @@
 "use strict";
 /**
  * @file repl.ts
- * @version 0.1.2
+ * @version 0.1.3
  * @description Main REPL loop and agentic tool-execution loop with conversation history management.
  */
 var __importDefault = (this && this.__importDefault) || function (mod) {
@@ -15,6 +15,7 @@ const index_1 = require("./tools/index");
 const ui_1 = require("./ui");
 const terminal_1 = require("./terminal");
 const context_1 = require("./context");
+const screenshot_1 = require("./tools/screenshot");
 async function startRepl(config) {
     const client = new client_1.GrokClient(config);
     const history = [{ role: 'system', content: config.systemPrompt }];
@@ -56,16 +57,48 @@ async function startRepl(config) {
                 terminal_1.terminal.write(chalk_1.default.red(`  Unknown command: ${input}. Type /help for commands.\n`));
             continue;
         }
-        history.push({ role: 'user', content: input });
+        // If the input contains /screen, capture a region screenshot and attach it.
+        if (input.includes('/screen')) {
+            const text = input.replace('/screen', '').trim() || 'Analyze this screenshot.';
+            terminal_1.terminal.write(chalk_1.default.dim('  Select a region on screen (drag to select, Esc to cancel)...\n'));
+            const base64 = await (0, screenshot_1.captureRegion)();
+            if (!base64) {
+                terminal_1.terminal.write(chalk_1.default.yellow('  Screenshot cancelled.\n'));
+                continue;
+            }
+            terminal_1.terminal.write(chalk_1.default.dim('  Screenshot captured.\n'));
+            history.push({
+                role: 'user',
+                content: [
+                    { type: 'text', text },
+                    { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } },
+                ],
+            });
+        }
+        else {
+            history.push({ role: 'user', content: input });
+        }
         // Snapshot length after user message — restore here on failure so any
         // partial assistant/tool messages added during the loop are rolled back.
         const historySnapshot = history.length;
         try {
             await runAgentLoop(client, history, config);
+            // Strip images from history after response to avoid token bloat on future turns.
+            stripImagesFromHistory(history);
         }
         catch (err) {
             (0, ui_1.printError)(err.message);
             history.splice(historySnapshot);
+        }
+    }
+}
+function stripImagesFromHistory(history) {
+    for (const msg of history) {
+        if (Array.isArray(msg.content)) {
+            const textParts = msg.content.filter((p) => p.type === 'text');
+            if (textParts.length > 0) {
+                msg.content = textParts.map((p) => p.text).join(' ');
+            }
         }
     }
 }
