@@ -1,7 +1,7 @@
 "use strict";
 /**
  * @file repl.ts
- * @version 0.1.3
+ * @version 0.1.5
  * @description Main REPL loop and agentic tool-execution loop with conversation history management.
  */
 var __importDefault = (this && this.__importDefault) || function (mod) {
@@ -49,19 +49,19 @@ async function startRepl(config) {
         const input = (await terminal_1.terminal.readLine()).trim();
         if (!input)
             continue;
-        if (input.startsWith('/')) {
-            const cmd = commands[input];
-            if (cmd)
-                cmd();
-            else
-                terminal_1.terminal.write(chalk_1.default.red(`  Unknown command: ${input}. Type /help for commands.\n`));
-            continue;
-        }
-        // If the input contains /screen, capture a region screenshot and attach it.
+        // /screen must be checked before the generic command handler so that
+        // "/screen" alone (which starts with '/') is not caught as an unknown command.
         if (input.includes('/screen')) {
             const text = input.replace('/screen', '').trim() || 'Analyze this screenshot.';
             terminal_1.terminal.write(chalk_1.default.dim('  Select a region on screen (drag to select, Esc to cancel)...\n'));
-            const base64 = await (0, screenshot_1.captureRegion)();
+            let base64 = null;
+            try {
+                base64 = await (0, screenshot_1.captureRegion)();
+            }
+            catch (err) {
+                terminal_1.terminal.write(chalk_1.default.red(`  Screenshot error: ${err.message}\n`));
+                continue;
+            }
             if (!base64) {
                 terminal_1.terminal.write(chalk_1.default.yellow('  Screenshot cancelled.\n'));
                 continue;
@@ -74,6 +74,14 @@ async function startRepl(config) {
                     { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } },
                 ],
             });
+        }
+        else if (input.startsWith('/')) {
+            const cmd = commands[input];
+            if (cmd)
+                cmd();
+            else
+                terminal_1.terminal.write(chalk_1.default.red(`  Unknown command: ${input}. Type /help for commands.\n`));
+            continue;
         }
         else {
             history.push({ role: 'user', content: input });

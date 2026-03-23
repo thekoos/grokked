@@ -1,6 +1,6 @@
 /**
  * @file repl.ts
- * @version 0.1.3
+ * @version 0.1.5
  * @description Main REPL loop and agentic tool-execution loop with conversation history management.
  */
 
@@ -54,18 +54,18 @@ export async function startRepl(config: Config): Promise<void> {
 
     if (!input) continue;
 
-    if (input.startsWith('/')) {
-      const cmd = commands[input];
-      if (cmd) cmd();
-      else terminal.write(chalk.red(`  Unknown command: ${input}. Type /help for commands.\n`));
-      continue;
-    }
-
-    // If the input contains /screen, capture a region screenshot and attach it.
+    // /screen must be checked before the generic command handler so that
+    // "/screen" alone (which starts with '/') is not caught as an unknown command.
     if (input.includes('/screen')) {
       const text = input.replace('/screen', '').trim() || 'Analyze this screenshot.';
       terminal.write(chalk.dim('  Select a region on screen (drag to select, Esc to cancel)...\n'));
-      const base64 = await captureRegion();
+      let base64: string | null = null;
+      try {
+        base64 = await captureRegion();
+      } catch (err: any) {
+        terminal.write(chalk.red(`  Screenshot error: ${err.message}\n`));
+        continue;
+      }
       if (!base64) {
         terminal.write(chalk.yellow('  Screenshot cancelled.\n'));
         continue;
@@ -78,6 +78,11 @@ export async function startRepl(config: Config): Promise<void> {
           { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } },
         ],
       });
+    } else if (input.startsWith('/')) {
+      const cmd = commands[input];
+      if (cmd) cmd();
+      else terminal.write(chalk.red(`  Unknown command: ${input}. Type /help for commands.\n`));
+      continue;
     } else {
       history.push({ role: 'user', content: input });
     }

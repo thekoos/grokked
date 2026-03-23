@@ -29,7 +29,9 @@ Use at your own risk, no guarantees, no expectations, have fun...
 npm install -g git+https://github.com/thekoos/grokked
 ```
 
-> TypeScript is compiled automatically during install via the `prepare` script.
+> The pre-compiled `dist/` is included in the repo so no build step is needed on install.
+
+**Windows users:** after installing, add the antivirus exclusion described in the [Screenshot](#screenshot) section if you want to use `/screen`.
 
 ### From source
 
@@ -89,14 +91,50 @@ Start typing — responses stream above the input box in real time.
 
 ## Commands
 
-| Command  | Description                        |
-|----------|------------------------------------|
-| `/help`  | Show available commands             |
-| `/clear` | Clear conversation history          |
-| `/model` | Show the current model              |
-| `/exit`  | Exit grokked                        |
+| Command   | Description                                        |
+|-----------|----------------------------------------------------|
+| `/help`   | Show available commands                            |
+| `/clear`  | Clear the screen (keeps conversation history)      |
+| `/reset`  | Clear the screen and conversation history          |
+| `/model`  | Show the current model                             |
+| `/screen` | Attach a region screenshot to your next message    |
+| `/exit`   | Exit grokked                                       |
 
 `Ctrl+C` or `Ctrl+D` also exits cleanly.
+
+## Screenshot
+
+Include `/screen` anywhere in your message to attach a region screenshot to it:
+
+```
+What is this error? /screen
+```
+
+or as a standalone command:
+
+```
+/screen
+```
+
+A semi-transparent overlay appears across all monitors. Drag to draw a selection rectangle, release the mouse, then click **Capture** to send the screenshot to Grok, or **Cancel** (or press `Escape`) to abort.
+
+### Windows — antivirus exclusion required
+
+The screenshot script uses Windows APIs to capture the screen. Windows Defender flags this pattern as potentially malicious and will block the script unless you add an exclusion.
+
+**Open a PowerShell terminal as Administrator** (right-click PowerShell → *Run as administrator*), then run:
+
+```powershell
+Add-MpPreference -ExclusionPath "<path-to-your-grokked-scripts-folder>\capture-region.ps1"
+```
+
+Replace `<path-to-your-grokked-scripts-folder>` with the full path to the `scripts` folder inside your grokked installation. For a source install this is the `scripts/` folder in the cloned repo. For a global install you can find it by running:
+
+```powershell
+(Get-Command grokked).Source | Split-Path | Split-Path | Join-Path -ChildPath "scripts\capture-region.ps1"
+```
+
+> This exclusion must be added from an **Administrator** terminal — it will silently fail in a regular terminal.
 
 ## Tools
 

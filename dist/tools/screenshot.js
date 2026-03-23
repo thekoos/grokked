@@ -1,7 +1,7 @@
 "use strict";
 /**
  * @file tools/screenshot.ts
- * @version 0.1.0
+ * @version 0.1.5
  * @description Region screenshot capture — routes to platform-specific helpers and returns base64 JPEG.
  *              Windows: PowerShell WinForms overlay. macOS: screencapture -i. Linux: scrot -s.
  */
@@ -48,26 +48,36 @@ const path = __importStar(require("path"));
 const execAsync = (0, util_1.promisify)(child_process_1.exec);
 /**
  * Launches an interactive region selector and returns a base64-encoded JPEG,
- * or null if the user cancelled or an error occurred.
+ * null if the user cancelled, or throws on unexpected errors.
  */
 async function captureRegion() {
-    try {
-        if (process.platform === 'win32')
-            return await captureWindows();
-        if (process.platform === 'darwin')
-            return await captureMac();
-        return await captureLinux();
-    }
-    catch {
-        return null;
-    }
+    if (process.platform === 'win32')
+        return await captureWindows();
+    if (process.platform === 'darwin')
+        return await captureMac();
+    return await captureLinux();
 }
 async function captureWindows() {
-    const scriptPath = path.join(__dirname, '..', 'scripts', 'capture-region.ps1');
+    const scriptPath = path.join(__dirname, '..', '..', 'scripts', 'capture-region.ps1');
     if (!fs.existsSync(scriptPath)) {
         throw new Error(`Capture script not found: ${scriptPath}`);
     }
-    const { stdout } = await execAsync(`powershell -WindowStyle Hidden -ExecutionPolicy Bypass -File "${scriptPath}"`, { timeout: 60000 });
+    let stdout;
+    try {
+        const result = await execAsync(`powershell -WindowStyle Hidden -ExecutionPolicy Bypass -File "${scriptPath}"`, { timeout: 60000 });
+        stdout = result.stdout;
+    }
+    catch (err) {
+        const stderr = err.stderr?.trim() ?? '';
+        if (stderr.includes('antivirus') || stderr.includes('ScriptContainedMaliciousContent')) {
+            throw new Error('Windows Defender is blocking the screenshot script.\n' +
+                '  Run this once in an admin PowerShell to allow it:\n' +
+                `  Add-MpPreference -ExclusionPath "${scriptPath}"`);
+        }
+        if (err.code === 1 && !stderr)
+            return null;
+        throw new Error(`Screenshot script failed (code ${err.code}): ${stderr || err.message}`);
+    }
     return readAndDelete(stdout.trim());
 }
 async function captureMac() {
