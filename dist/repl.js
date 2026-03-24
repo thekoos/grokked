@@ -1,7 +1,7 @@
 "use strict";
 /**
  * @file repl.ts
- * @version 0.1.7
+ * @version 0.1.8
  * @description Main REPL loop and agentic tool-execution loop with conversation history management.
  */
 var __importDefault = (this && this.__importDefault) || function (mod) {
@@ -134,7 +134,8 @@ async function runAgentLoop(client, history, config) {
             }
             (0, ui_1.printToolStart)(toolCall.function.name, args);
             const result = await (0, index_1.executeTool)(toolCall.function.name, args, config);
-            (0, ui_1.printToolResult)(result);
+            if (toolCall.function.name !== 'read_file')
+                (0, ui_1.printToolResult)(result);
             history.push({
                 role: 'tool',
                 tool_call_id: toolCall.id,

@@ -1,6 +1,6 @@
 /**
  * @file repl.ts
- * @version 0.1.7
+ * @version 0.1.8
  * @description Main REPL loop and agentic tool-execution loop with conversation history management.
  */
 
@@ -142,7 +142,7 @@ export async function runAgentLoop(
 
       printToolStart(toolCall.function.name, args);
       const result = await executeTool(toolCall.function.name, args, config);
-      printToolResult(result);
+      if (toolCall.function.name !== 'read_file') printToolResult(result);
 
       history.push({
         role: 'tool',
