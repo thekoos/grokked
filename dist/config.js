@@ -1,7 +1,7 @@
 "use strict";
 /**
  * @file config.ts
- * @version 0.1.1
+ * @version 0.1.2
  * @description Loads and validates configuration from environment variables and optional GROKKED.md.
  */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
@@ -88,6 +88,7 @@ Date: ${new Date().toISOString().split('T')[0]}
 - Be concise — lead with actions, not lengthy explanations.
 - For bash commands that modify state, explain what you're doing first.
 - Use relative paths where possible.
+- When writing HTML files, always use raw HTML tags (<div>, not &lt;div&gt;). Never entity-encode the content.
 - When a task is ambiguous, ask for clarification rather than guessing.`;
 }
 //# sourceMappingURL=config.js.map
