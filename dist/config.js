@@ -1,7 +1,7 @@
 "use strict";
 /**
  * @file config.ts
- * @version 0.1.2
+ * @version 0.1.3
  * @description Loads and validates configuration from environment variables and optional GROKKED.md.
  */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
@@ -88,6 +88,7 @@ Date: ${new Date().toISOString().split('T')[0]}
 - Be concise — lead with actions, not lengthy explanations.
 - For bash commands that modify state, explain what you're doing first.
 - Use relative paths where possible.
+- When writing any file via write_file or edit_file, provide raw file content only — never wrap it in markdown code fences (no \`\`\`html, \`\`\`js, or any \`\`\` delimiters). The content argument is written directly to disk.
 - When writing HTML files, always use raw HTML tags (<div>, not &lt;div&gt;). Never entity-encode the content.
 - When a task is ambiguous, ask for clarification rather than guessing.`;
 }
