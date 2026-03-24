@@ -1,6 +1,6 @@
 /**
  * @file repl.ts
- * @version 0.1.6
+ * @version 0.1.7
  * @description Main REPL loop and agentic tool-execution loop with conversation history management.
  */
 
@@ -102,7 +102,7 @@ export async function startRepl(config: Config): Promise<void> {
   }
 }
 
-function stripImagesFromHistory(history: Message[]): void {
+export function stripImagesFromHistory(history: Message[]): void {
   for (const msg of history) {
     if (Array.isArray(msg.content)) {
       const textParts = msg.content.filter((p) => p.type === 'text');
@@ -113,7 +113,7 @@ function stripImagesFromHistory(history: Message[]): void {
   }
 }
 
-async function runAgentLoop(
+export async function runAgentLoop(
   client: GrokClient,
   history: Message[],
   config: Config,

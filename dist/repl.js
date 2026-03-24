@@ -1,7 +1,7 @@
 "use strict";
 /**
  * @file repl.ts
- * @version 0.1.6
+ * @version 0.1.7
  * @description Main REPL loop and agentic tool-execution loop with conversation history management.
  */
 var __importDefault = (this && this.__importDefault) || function (mod) {
@@ -9,6 +9,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.startRepl = startRepl;
+exports.stripImagesFromHistory = stripImagesFromHistory;
+exports.runAgentLoop = runAgentLoop;
 const chalk_1 = __importDefault(require("chalk"));
 const client_1 = require("./client");
 const index_1 = require("./tools/index");
