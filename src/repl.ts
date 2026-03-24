@@ -1,6 +1,6 @@
 /**
  * @file repl.ts
- * @version 0.1.5
+ * @version 0.1.6
  * @description Main REPL loop and agentic tool-execution loop with conversation history management.
  */
 
@@ -54,11 +54,11 @@ export async function startRepl(config: Config): Promise<void> {
 
     if (!input) continue;
 
-    // /screen must be checked before the generic command handler so that
-    // "/screen" alone (which starts with '/') is not caught as an unknown command.
-    if (input.includes('/screen')) {
-      const text = input.replace('/screen', '').trim() || 'Analyze this screenshot.';
-      terminal.write(chalk.dim('  Select a region on screen (drag to select, Esc to cancel)...\n'));
+    // /clip must be checked before the generic command handler so that
+    // "/clip" alone (which starts with '/') is not caught as an unknown command.
+    if (input.includes('/clip')) {
+      const text = input.replace('/clip', '').trim() || 'Analyze this screenshot.';
+      terminal.write(chalk.dim('  Reading screenshot from clipboard...\n'));
       let base64: string | null = null;
       try {
         base64 = await captureRegion();
@@ -67,7 +67,7 @@ export async function startRepl(config: Config): Promise<void> {
         continue;
       }
       if (!base64) {
-        terminal.write(chalk.yellow('  Screenshot cancelled.\n'));
+        terminal.write(chalk.yellow('  No image in clipboard. Press Win+Shift+S to capture a region first.\n'));
         continue;
       }
       terminal.write(chalk.dim('  Screenshot captured.\n'));

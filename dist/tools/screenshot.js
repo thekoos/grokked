@@ -1,7 +1,7 @@
 "use strict";
 /**
  * @file tools/screenshot.ts
- * @version 0.1.5
+ * @version 0.1.9
  * @description Region screenshot capture — routes to platform-specific helpers and returns base64 JPEG.
  *              Windows: PowerShell WinForms overlay. macOS: screencapture -i. Linux: scrot -s.
  */
@@ -41,11 +41,9 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.captureRegion = captureRegion;
 const child_process_1 = require("child_process");
-const util_1 = require("util");
 const fs = __importStar(require("fs"));
 const os = __importStar(require("os"));
 const path = __importStar(require("path"));
-const execAsync = (0, util_1.promisify)(child_process_1.exec);
 /**
  * Launches an interactive region selector and returns a base64-encoded JPEG,
  * null if the user cancelled, or throws on unexpected errors.
@@ -62,33 +60,47 @@ async function captureWindows() {
     if (!fs.existsSync(scriptPath)) {
         throw new Error(`Capture script not found: ${scriptPath}`);
     }
-    let stdout;
-    try {
-        const result = await execAsync(`powershell -WindowStyle Hidden -ExecutionPolicy Bypass -File "${scriptPath}"`, { timeout: 60000 });
-        stdout = result.stdout;
+    // Use spawn with windowsHide:true (CREATE_NO_WINDOW) instead of
+    // "-WindowStyle Hidden". The latter hides the inherited console window
+    // which causes Windows Terminal to minimize; CREATE_NO_WINDOW never
+    // creates a console window in the first place so the parent is untouched.
+    const { stdout, stderr, code } = await new Promise((resolve, reject) => {
+        const ps = (0, child_process_1.spawn)('powershell.exe', ['-ExecutionPolicy', 'Bypass', '-NonInteractive', '-File', scriptPath], { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
+        let out = '';
+        let err = '';
+        ps.stdout.on('data', (d) => (out += d));
+        ps.stderr.on('data', (d) => (err += d));
+        ps.on('close', (c) => resolve({ stdout: out, stderr: err, code: c ?? 1 }));
+        ps.on('error', reject);
+    });
+    const errMsg = stderr.trim();
+    if (errMsg.includes('antivirus') || errMsg.includes('ScriptContainedMaliciousContent')) {
+        throw new Error('Windows Defender is blocking the screenshot script.\n' +
+            '  Run this once in an admin PowerShell to allow it:\n' +
+            `  Add-MpPreference -ExclusionPath "${scriptPath}"`);
     }
-    catch (err) {
-        const stderr = err.stderr?.trim() ?? '';
-        if (stderr.includes('antivirus') || stderr.includes('ScriptContainedMaliciousContent')) {
-            throw new Error('Windows Defender is blocking the screenshot script.\n' +
-                '  Run this once in an admin PowerShell to allow it:\n' +
-                `  Add-MpPreference -ExclusionPath "${scriptPath}"`);
-        }
-        if (err.code === 1 && !stderr)
-            return null;
-        throw new Error(`Screenshot script failed (code ${err.code}): ${stderr || err.message}`);
-    }
+    if (code === 1 && !errMsg)
+        return null;
+    if (code !== 0)
+        throw new Error(`Screenshot script failed (code ${code}): ${errMsg}`);
     return readAndDelete(stdout.trim());
 }
 async function captureMac() {
     const tmpFile = path.join(os.tmpdir(), `grokked-${Date.now()}.jpg`);
-    await execAsync(`screencapture -i -s -t jpg "${tmpFile}"`, { timeout: 60000 });
+    await runCmd('screencapture', ['-i', '-s', '-t', 'jpg', tmpFile]);
     return readAndDelete(tmpFile);
 }
 async function captureLinux() {
     const tmpFile = path.join(os.tmpdir(), `grokked-${Date.now()}.jpg`);
-    await execAsync(`scrot -s "${tmpFile}"`, { timeout: 60000 });
+    await runCmd('scrot', ['-s', tmpFile]);
     return readAndDelete(tmpFile);
+}
+function runCmd(cmd, args) {
+    return new Promise((resolve, reject) => {
+        const p = (0, child_process_1.spawn)(cmd, args);
+        p.on('close', (code) => (code === 0 ? resolve() : reject(new Error(`${cmd} exited ${code}`))));
+        p.on('error', reject);
+    });
 }
 function readAndDelete(filePath) {
     if (!filePath || !fs.existsSync(filePath))
