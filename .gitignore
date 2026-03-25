@@ -18,6 +18,9 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
+# Claude Code — project-local AI instructions, not useful to end users
+CLAUDE.md
+
 # Editors
 .vscode/
 .idea/
