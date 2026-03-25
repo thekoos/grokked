@@ -1,7 +1,7 @@
 "use strict";
 /**
  * @file repl.ts
- * @version 0.1.8
+ * @version 0.1.12
  * @description Main REPL loop and agentic tool-execution loop with conversation history management.
  */
 var __importDefault = (this && this.__importDefault) || function (mod) {
@@ -33,6 +33,9 @@ async function startRepl(config) {
         });
     };
     process.on('SIGINT', () => shutdown());
+    terminal_1.terminal.setCtrlCHandler(() => shutdown());
+    // When non-null, the next user input is treated as a model selection number.
+    let pendingModelList = null;
     const commands = {
         '/help': () => (0, ui_1.printHelp)(),
         '/clear': () => {
@@ -45,12 +48,49 @@ async function startRepl(config) {
             terminal_1.terminal.write(chalk_1.default.dim('  Conversation history and context cleared.\n'));
         },
         '/exit': () => shutdown(),
-        '/model': () => terminal_1.terminal.write(chalk_1.default.dim(`  Model: ${config.model}\n`)),
+        '/model': () => {
+            terminal_1.terminal.clearScreen();
+            terminal_1.terminal.write(chalk_1.default.bold('\n  Select a model:\n\n'));
+            config.models.forEach((m, i) => {
+                const current = m === config.model ? chalk_1.default.dim('  ← current') : '';
+                terminal_1.terminal.write(`  ${chalk_1.default.bold(`[${i + 1}]`)}  ${m}${current}\n`);
+            });
+            terminal_1.terminal.write(chalk_1.default.yellow(`\n  Type a number (1–${config.models.length}) and press Enter:\n`));
+            pendingModelList = config.models;
+        },
     };
+    const commandDescriptions = {
+        '/clip': 'Attach a clipboard screenshot to your next message',
+        '/clear': 'Clear the screen',
+        '/exit': 'Exit grokked',
+        '/help': 'Show available commands',
+        '/model': 'Select a model from the available xAI models',
+        '/reset': 'Clear the screen and conversation history',
+    };
+    terminal_1.terminal.setCompletionProvider((input) => {
+        const filter = input.toLowerCase();
+        return Object.entries(commandDescriptions)
+            .filter(([name]) => name.startsWith(filter))
+            .map(([name, description]) => ({ name, description }));
+    });
     while (true) {
         const input = (await terminal_1.terminal.readLine()).trim();
         if (!input)
             continue;
+        // Model selection mode — next input after /model is a number choice.
+        if (pendingModelList) {
+            const models = pendingModelList;
+            const n = parseInt(input, 10);
+            if (n >= 1 && n <= models.length) {
+                config.model = models[n - 1];
+                terminal_1.terminal.write(chalk_1.default.dim(`  ✓ Model set to ${chalk_1.default.bold(config.model)}\n`));
+                pendingModelList = null;
+            }
+            else {
+                terminal_1.terminal.write(chalk_1.default.red(`  Invalid — enter a number between 1 and ${models.length}:\n`));
+            }
+            continue;
+        }
         // /clip must be checked before the generic command handler so that
         // "/clip" alone (which starts with '/') is not caught as an unknown command.
         if (input.includes('/clip')) {
@@ -79,10 +119,17 @@ async function startRepl(config) {
         }
         else if (input.startsWith('/')) {
             const cmd = commands[input];
-            if (cmd)
-                cmd();
-            else
+            if (cmd) {
+                try {
+                    await cmd();
+                }
+                catch (err) {
+                    terminal_1.terminal.write(chalk_1.default.red(`  Error: ${err.message}\n`));
+                }
+            }
+            else {
                 terminal_1.terminal.write(chalk_1.default.red(`  Unknown command: ${input}. Type /help for commands.\n`));
+            }
             continue;
         }
         else {

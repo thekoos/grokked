@@ -4,6 +4,22 @@ All notable changes to this project will be documented here.
 
 ## [Unreleased]
 
+### Added
+- Slash command autocomplete — typing `/` pops a filtered command list above the input box
+- **Tab completion** — pressing Tab fills in the command when exactly one match is shown; press Enter to run
+- `/clip` command — attach a clipboard screenshot (Win+Shift+S) to your next message
+- `/model` command — shows a numbered list of models from `GROK_MODELS` in `.env`; type a number and press Enter to switch for the session
+- `GROK_MODELS` env var — comma-separated list of models available via `/model`; `.env.example` updated with the current xAI model lineup
+
+### Fixed
+- Command output (`/help`, `/model`, etc.) not appearing — `readLine()` was clearing the `cursorInBox` flag before returning, causing `enterOutputMode()` to skip repositioning the cursor on platforms where the cursor position was not reliably preserved; flag is now kept set so the first write after any input always repositions correctly
+- Session context not saving on `Ctrl+C` — raw mode was intercepting the keypress before the SIGINT handler could run; now routes through the registered shutdown callback so the AI summary is always written
+- `read_file` result preview suppressed in terminal output — the header line is sufficient
+- HTML files written via `write_file` rendering as plain text — model instructed never to wrap file content in markdown code fences and never to entity-encode HTML tags
+
+### Tests
+- Added `tests/repl.test.ts` — 11 tests covering `stripImagesFromHistory` and `runAgentLoop` (tool execution, JSON parse fallback, multi-tool turns, history rollback)
+
 ---
 
 ## [0.2.0] — 2026-03-23

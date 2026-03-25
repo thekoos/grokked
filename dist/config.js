@@ -1,7 +1,7 @@
 "use strict";
 /**
  * @file config.ts
- * @version 0.1.3
+ * @version 0.1.4
  * @description Loads and validates configuration from environment variables and optional GROKKED.md.
  */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
@@ -50,9 +50,16 @@ function loadConfig() {
     if (!model) {
         throw new Error('GROK_MODEL is set but empty. Use a valid model name like "grok-3".');
     }
+    const modelsRaw = process.env.GROK_MODELS ?? '';
+    const models = modelsRaw
+        .split(',')
+        .map((m) => m.trim())
+        .filter(Boolean);
+    if (!models.includes(model))
+        models.unshift(model);
     const workingDir = process.cwd();
     const systemPrompt = buildSystemPrompt(workingDir);
-    return { apiKey, model, systemPrompt, workingDir };
+    return { apiKey, model, models, systemPrompt, workingDir };
 }
 function buildSystemPrompt(cwd) {
     const grokkedMdPath = path.join(cwd, 'GROKKED.md');

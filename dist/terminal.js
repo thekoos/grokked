@@ -2,7 +2,7 @@
 "use strict";
 /**
  * @file terminal.ts
- * @version 0.1.7
+ * @version 0.1.9
  * @description Fixed-bottom terminal UI with raw mode input, ANSI scroll region output, and approval prompts.
  *              Input box wraps to multiple lines when text exceeds terminal width.
  */
@@ -34,6 +34,9 @@ class TerminalUI {
     liveCursor = 0;
     cursorInBox = false;
     workingDir = '';
+    ctrlCHandler = null;
+    completionProvider = null;
+    currentCompletionRows = 0;
     spinnerTimer = null;
     spinnerIndex = 0;
     spinnerText = '';
@@ -67,6 +70,12 @@ class TerminalUI {
     // ── Initialisation ──────────────────────────────────────────────────────────
     setWorkingDir(dir) {
         this.workingDir = dir;
+    }
+    setCtrlCHandler(fn) {
+        this.ctrlCHandler = fn;
+    }
+    setCompletionProvider(fn) {
+        this.completionProvider = fn;
     }
     init() {
         process.stdout.write('\x1b[2J\x1b[H');
@@ -114,6 +123,11 @@ class TerminalUI {
     drawBox(input, cursorPos) {
         const cols = this.cols;
         const rows = this.rows;
+        // Compute completions when input starts with '/'.
+        const completions = (input.startsWith('/') && this.completionProvider)
+            ? this.completionProvider(input)
+            : [];
+        const completionRows = completions.length;
         // The full visual string: prompt on the first "line", then text wraps.
         const combined = PROMPT + input;
         // How many terminal rows the input needs (cap to avoid eating the screen).
@@ -122,14 +136,28 @@ class TerminalUI {
         const inputLines = Math.min(rawLines, maxInputLines);
         const topBorderRow = rows - 1 - inputLines; // row for ─── above input
         const inputStartRow = topBorderRow + 1; // first row of actual text
-        const scrollBottom = Math.max(2, topBorderRow - 1);
-        // Clear every row that is, or was, part of the input area.
-        const clearFrom = Math.min(topBorderRow, this.currentTopBorderRow);
+        const completionStartRow = topBorderRow - completionRows;
+        const scrollBottom = Math.max(2, completionStartRow - 1);
+        // Clear every row that is, or was, part of the input/completion area.
+        const oldHighestRow = this.currentTopBorderRow - this.currentCompletionRows;
+        const clearFrom = Math.min(oldHighestRow, completionStartRow);
         for (let r = clearFrom; r <= rows; r++) {
             process.stdout.write(`\x1b[${r};1H\x1b[2K`);
         }
         // Update the ANSI scroll region.
         process.stdout.write(`\x1b[1;${scrollBottom}r`);
+        // Draw completions above the top border.
+        const nameWidth = Math.max(...completions.map((c) => c.name.length), 0) + 2;
+        for (let i = 0; i < completions.length; i++) {
+            const c = completions[i];
+            const row = completionStartRow + i;
+            const namePadded = c.name.padEnd(nameWidth);
+            const descAvailable = cols - nameWidth - 4;
+            const desc = c.description.length > descAvailable
+                ? c.description.slice(0, descAvailable - 1) + '…'
+                : c.description;
+            process.stdout.write(`\x1b[${row};1H  ${chalk_1.default.cyan(namePadded)}  ${chalk_1.default.dim(desc)}`);
+        }
         // Draw top border.
         const hr = chalk_1.default.dim('─'.repeat(cols));
         process.stdout.write(`\x1b[${topBorderRow};1H${hr}`);
@@ -161,6 +189,7 @@ class TerminalUI {
         this.currentScrollBottom = scrollBottom;
         this.currentTopBorderRow = topBorderRow;
         this.currentInputLines = inputLines;
+        this.currentCompletionRows = completionRows;
         this.cursorInBox = true;
     }
     // ── Output ──────────────────────────────────────────────────────────────────
@@ -222,9 +251,15 @@ class TerminalUI {
                     return;
                 }
                 if (str === '\x03' || str === '\x04') {
-                    this.cleanup();
-                    process.stdout.write('Goodbye!\n');
-                    process.exit(0);
+                    if (this.ctrlCHandler) {
+                        this.ctrlCHandler();
+                    }
+                    else {
+                        this.cleanup();
+                        process.stdout.write('Goodbye!\n');
+                        process.exit(0);
+                    }
+                    return;
                 }
                 if (str === '\x7f') { // Backspace
                     if (this.liveCursor > 0) {
@@ -274,6 +309,17 @@ class TerminalUI {
                 }
                 if (str.startsWith('\x1b'))
                     return; // ignore other escape sequences
+                if (str === '\t') { // Tab — complete the single matching command
+                    if (this.completionProvider) {
+                        const completions = this.completionProvider(this.liveBuffer);
+                        if (completions.length === 1) {
+                            this.liveBuffer = completions[0].name;
+                            this.liveCursor = this.liveBuffer.length;
+                            this.drawBox(this.liveBuffer, this.liveCursor);
+                        }
+                    }
+                    return;
+                }
                 // Printable characters only (tab excluded)
                 if (str >= ' ') {
                     this.liveBuffer = this.liveBuffer.slice(0, this.liveCursor) + str + this.liveBuffer.slice(this.liveCursor);
@@ -288,10 +334,9 @@ class TerminalUI {
                     process.stdin.pause();
                 }
                 // Redraw the box empty so it stays visible during streaming.
+                // Keep cursorInBox = true so that the next enterOutputMode() call
+                // always repositions the cursor correctly regardless of platform quirks.
                 this.drawBox('', 0);
-                // Move cursor into the output area; output will scroll above the box.
-                process.stdout.write(`\x1b[${this.currentScrollBottom};1H`);
-                this.cursorInBox = false;
                 resolve(result);
             };
             process.stdin.on('data', onData);
@@ -316,9 +361,15 @@ class TerminalUI {
             const onData = (data) => {
                 const str = data.toString();
                 if (str === '\x03' || str === '\x04') {
-                    this.cleanup();
-                    process.stdout.write('Goodbye!\n');
-                    process.exit(0);
+                    if (this.ctrlCHandler) {
+                        this.ctrlCHandler();
+                    }
+                    else {
+                        this.cleanup();
+                        process.stdout.write('Goodbye!\n');
+                        process.exit(0);
+                    }
+                    return;
                 }
                 const n = parseInt(str, 10);
                 if (n >= 1 && n <= choices.length) {

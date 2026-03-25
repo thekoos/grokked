@@ -1,6 +1,6 @@
 /**
  * @file client.ts
- * @version 0.1.3
+ * @version 0.1.5
  * @description Grok API client wrapping the OpenAI-compatible SDK with streaming and tool-call accumulation.
  */
 
